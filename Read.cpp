@@ -10,6 +10,10 @@ Read::Read(string fileName){
 }
 
 void Read::getData(void){
+
+//	TODO
+// Authomatic calculation of the normal for each triangle, 
+// in order to compute it instead of store it.
 	
 	cout<<"reading data\n";
 	const int Completed = 4; //1 for the normal and 3 for the vertices.
