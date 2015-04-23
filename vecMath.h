@@ -15,7 +15,15 @@ public:
 
 	float magnitude ();
 	Vertice unitVector ();
-	Vertice vecMath::vectorStringToVerticeVector ( vector<string>tokens );
+	Vertice vectorStringToVerticeVector ( vector<string>tokens );
+};
+
+class face
+{
+	vector<Vertice> Face;
+
+public:
+	Vertice normal();
 };
 
 
