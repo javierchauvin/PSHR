@@ -152,6 +152,8 @@ void Read::getHoles( void ){
 			
 			if ( isInsideBox(Data[i][j].Vertex, InnerBox) ){
 				//do the algorithm to find the boudary vertices.
+
+				
 			}
 
 		}
