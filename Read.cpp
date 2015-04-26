@@ -2,11 +2,16 @@
 #include "Read.h"
 #include <fstream>
 
+#include "Octree.h"
+
+using namespace brandonpelfrey;
+
 Read::Read(string fileName){
 
 	cout<<"receiving the file at reading\n";
 	Read::fileToRead = fileName;
 	getData();
+	fillOctree();
 }
 
 void Read::getData(void){
@@ -141,6 +146,70 @@ CBox Read::getInnerBox ( void ){
 	InnerBox.min.z = Box.max.z + ((1-IBoxFactorZ)/2 * Box.min.z); 
 
 	return InnerBox;
+}
+
+// Used for testing
+std::vector<Vec3> points;
+Octree *octree;
+OctreePoint *octreePoints;
+Vec3 qmin, qmax;
+
+void Read::fillOctree ( void ){
+
+	CBox InnerBox = getInnerBox();
+
+	Vertice CenterPoint;
+	CenterPoint.x = (InnerBox.max.x - InnerBox.min.x)/2;
+	CenterPoint.y = (InnerBox.max.y - InnerBox.min.y)/2;
+	CenterPoint.z = (InnerBox.max.z - InnerBox.min.z)/2;
+
+		// Create a new Octree centered at the origin
+	// with physical dimension 2x2x2
+	octree = new Octree(	Vec3(	(InnerBox.max.x - InnerBox.min.x)/2,
+										(InnerBox.max.y - InnerBox.min.y)/2,
+										(InnerBox.max.z - InnerBox.min.z)/2 ), 
+								Vec3( InnerBox.max.x,
+										InnerBox.max.y,
+										InnerBox.max.z )
+								);
+
+	// Insert the points into the octree
+	Vertice actualPoint;
+	octreePoints = new OctreePoint [Data.size()*3];
+	
+	int k=0;
+	for (int i = 0; i< Data.size(); i++ ){
+		for ( int j=0; j<Data.at(i).size(); j++ ){
+			if (isInsideBox(Data[i][j].Vertex,InnerBox)){
+				//octreePoints[i].setPosition((Vec3*)Data[i][j].Vertex);
+				
+				octreePoints[i].setPosition(Vec3(Data[i][j].Vertex.x,Data[i][j].Vertex.y,Data[i][j].Vertex.z) );
+				octree->insert(octreePoints + i);
+				k++;
+			}
+		}
+	}
+
+
+	//for(int i=0; i<Data.size(); ++i) {
+
+	//	if (isInsideBox(actualPoint,InnerBox)){
+	//		octreePoints[i].setPosition(points[i]);
+	//		octree->insert(octreePoints + i);
+	//	}
+	//}
+	printf("Inserted points to octree\n"); fflush(stdout);
+
+	// Create a very small query box. The smaller this box is
+	// the less work the octree will need to do. This may seem
+	// like it is exagerating the benefits, but often, we only
+	// need to know very nearby objects.
+	qmin = Vec3(-.05,-.05,-.05);
+	qmax = Vec3(.05,.05,.05);
+
+	// Remember: In the case where the query is relatively close
+	// to the size of the whole octree space, the octree will
+	// actually be a good bit slower than brute forcing every point!
 }
 
 void Read::getHoles( void ){

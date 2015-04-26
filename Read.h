@@ -42,4 +42,6 @@ private:
 
 	CBox getInnerBox ( void );
 
+	void fillOctree (void);
+
 };
