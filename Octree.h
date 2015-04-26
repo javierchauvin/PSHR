@@ -5,6 +5,10 @@
 #include <vector>
 #include "OctreePoint.h"
 
+
+//All the octree code was taken from https://github.com/brandonpelfrey/SimpleOctree.git
+//and applied to our code.
+
 namespace brandonpelfrey {
 
 	/**!
@@ -25,9 +29,9 @@ namespace brandonpelfrey {
 				Children follow a predictable pattern to make accesses simple.
 				Here, - means less than 'origin' in that dimension, + means greater than.
 				child:	0 1 2 3 4 5 6 7
-				x:      - - - - + + + +
-				y:      - - + + - - + +
-				z:      - + - + - + - +
+				x:			- - - - + + + +
+				y:			- - + + - - + +
+				z:			- + - + - + - +
 		 */
 
 		public:
@@ -73,6 +77,7 @@ namespace brandonpelfrey {
 		}
 
 		void insert(OctreePoint* point) {
+
 			// If this node doesn't have a data point yet assigned 
 			// and it is a leaf, then we're done!
 			if(isLeafNode()) {

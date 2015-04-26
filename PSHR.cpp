@@ -6,9 +6,8 @@
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//string fileName = "test.stl";
+	//string fileName = "prueba.stl";
 	string fileName = "javier_1k.stl";
-	//string fileName = "jachauvi_1.stl";
 
 	cout<< "sending the file\n";
 	Read file(fileName);

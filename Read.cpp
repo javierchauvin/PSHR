@@ -1,17 +1,45 @@
 #include "stdafx.h"
 #include "Read.h"
 #include <fstream>
+#include <Windows.h>
 
 #include "Octree.h"
 
 using namespace brandonpelfrey;
+
+
+// Used for testing
+//std::vector<Vec3> points;
+Octree *octree;
+OctreePoint *octreePoints;
+Vec3 qmin, qmax;
 
 Read::Read(string fileName){
 
 	cout<<"receiving the file at reading\n";
 	Read::fileToRead = fileName;
 	getData();
+	getContainingBox();
 	fillOctree();
+
+
+	Vec3 qmin,qmax;
+	vector<OctreePoint*> results;
+		// Create a very small query box. The smaller this box is
+	// the less work the octree will need to do. This may seem
+	// like it is exagerating the benefits, but often, we only
+	// need to know very nearby objects.
+	qmin = Vec3(-.05,-.05,-.05);
+	qmax = Vec3(1.5,.05,1.5);
+	octree->getPointsInsideBox(qmin, qmax, results);
+
+	cout <<"Printing the data"<<'\n';
+
+	for (int i =0; i<results.size(); i++){
+		cout << results.at(i)->getTriangle() <<" ";
+		cout << results.at(i)->getPosition().x <<" " <<results.at(i)->getPosition().y<<" " <<results.at(i)->getPosition().z<<"\n";
+	}
+
 }
 
 void Read::getData(void){
@@ -81,6 +109,11 @@ void Read::getData(void){
 
 void Read::getContainingBox ( void ){
 
+	Box.min = Data[0][1].Vertex;
+	Box.max = Data[0][1].Vertex;
+	Box.dimensions.x = 0; Box.dimensions.y = 0; Box.dimensions.z = 0;
+
+
 	// j starts at 1 due to position 0 is the normal of the triangle
 	for(unsigned int i = 0; i < Data.size(); i++){
 		for(unsigned int j = 1; j < Data.at(i).size(); j++){
@@ -141,18 +174,12 @@ CBox Read::getInnerBox ( void ){
 	InnerBox.max.y = Box.max.y - ((1-IBoxFactorY)/2 * Box.max.y); 
 	InnerBox.max.z = Box.max.z - ((1-IBoxFactorZ)/2 * Box.max.z); 
 
-	InnerBox.min.x = Box.max.x + ((1-IBoxFactorX)/2 * Box.min.x); 
-	InnerBox.min.y = Box.max.y + ((1-IBoxFactorY)/2 * Box.min.y); 
-	InnerBox.min.z = Box.max.z + ((1-IBoxFactorZ)/2 * Box.min.z); 
+	InnerBox.min.x = Box.min.x + ((1-IBoxFactorX)/2 * Box.min.x); 
+	InnerBox.min.y = Box.min.y + ((1-IBoxFactorY)/2 * Box.min.y); 
+	InnerBox.min.z = Box.min.z + ((1-IBoxFactorZ)/2 * Box.min.z); 
 
 	return InnerBox;
 }
-
-// Used for testing
-std::vector<Vec3> points;
-Octree *octree;
-OctreePoint *octreePoints;
-Vec3 qmin, qmax;
 
 void Read::fillOctree ( void ){
 
@@ -179,13 +206,16 @@ void Read::fillOctree ( void ){
 	
 	int k=0;
 	for (int i = 0; i< Data.size(); i++ ){
-		for ( int j=0; j<Data.at(i).size(); j++ ){
-			if (isInsideBox(Data[i][j].Vertex,InnerBox)){
-				//octreePoints[i].setPosition((Vec3*)Data[i][j].Vertex);
-				
-				octreePoints[i].setPosition(Vec3(Data[i][j].Vertex.x,Data[i][j].Vertex.y,Data[i][j].Vertex.z) );
-				octree->insert(octreePoints + i);
+		if (isInsideBox(Data[i][1].Vertex,InnerBox)){
+			for ( int j=1; j<Data.at(i).size(); j++ ){
+			
+				octreePoints[k].setPosition(Vec3(Data[i][j].Vertex.x,Data[i][j].Vertex.y,Data[i][j].Vertex.z) );
+				octreePoints[k].setTriangle(i);
+
+
 				k++;
+
+					octree->insert(octreePoints + k);
 			}
 		}
 	}
@@ -199,13 +229,6 @@ void Read::fillOctree ( void ){
 	//	}
 	//}
 	printf("Inserted points to octree\n"); fflush(stdout);
-
-	// Create a very small query box. The smaller this box is
-	// the less work the octree will need to do. This may seem
-	// like it is exagerating the benefits, but often, we only
-	// need to know very nearby objects.
-	qmin = Vec3(-.05,-.05,-.05);
-	qmax = Vec3(.05,.05,.05);
 
 	// Remember: In the case where the query is relatively close
 	// to the size of the whole octree space, the octree will
