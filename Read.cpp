@@ -222,37 +222,68 @@ void Read::getHoles( void ){
 							
 							// Connection[triCoor][dotCoor]; index cheking
 
-							if ( 0 == ConnectedV.size()){  //If there are not repeated connected vertices yet.
-								CVertex.i = triCoor; CVertex.j = dotCoor; //just storing the dot
-								ConnectedV.push_back(CVertex);
-							} 
-							else {
+							//if ( 0 == ConnectedV.size()){  //If there are not repeated connected vertices yet.
+							//	CVertex.i = triCoor; CVertex.j = dotCoor; //just storing the dot
+							//	ConnectedV.push_back(CVertex);
 
+							//	CVertex.i = i; CVertex.j = j;
+							//	ConnectedV.push_back(CVertex);
+							//	CVertex.i = i; CVertex.j = j+1;
+							//} 
+							//else {
+
+								if (ConnectedV.size() == 0){
+									for (int c=1; c<Connection[i].size(); c++){
+										if( j != c){
+											CVertex.i = i; CVertex.j = c;
+											ConnectedV.push_back(CVertex);
+										}
+									}
+								}
+									
 								for(int c=0; c<ConnectedV.size(); c++){
-									if (	ConnectedV[c].i == triCoor &&
-											ConnectedV[c].j == dotCoor){
-										
+									int m = ConnectedV[c].i;
+									int p = ConnectedV[c].j;
+									if (	Data[triCoor][dotCoor].Vertex.x == Data[ConnectedV[c].i][ConnectedV[c].j].Vertex.x &&
+											Data[triCoor][dotCoor].Vertex.y == Data[ConnectedV[c].i][ConnectedV[c].j].Vertex.y &&
+											Data[triCoor][dotCoor].Vertex.z == Data[ConnectedV[c].i][ConnectedV[c].j].Vertex.z ||
+											
+											Data[i][j].Vertex.x == Data[ConnectedV[c].i][ConnectedV[c].j].Vertex.x &&
+											Data[i][j].Vertex.y == Data[ConnectedV[c].i][ConnectedV[c].j].Vertex.y &&
+											Data[i][j].Vertex.z == Data[ConnectedV[c].i][ConnectedV[c].j].Vertex.z  
+											)
+									{
+													
 										Repeated = true;//find how to end the loop when is repeated
+										c = ConnectedV.size();
 									}
 								}
 
 								if ( !Repeated ){
-									CVertex.i = triCoor; CVertex.j = dotCoor; //just storing the dot
+									CVertex.i = triCoor;
+									CVertex.j = dotCoor; //just storing the dot
 									ConnectedV.push_back(CVertex);
 								}
-							}
+								Repeated = false;
+							//}
 						}
 					}
 
 				}
 			}
-			fillingRConnection.push_back(ConnectedV);
-			ConnectedV.clear();		
+			if (ConnectedV.size() != 0){
+				fillingRConnection.push_back(ConnectedV);
+				ConnectedV.clear();		
+			}
 		}
-		RealConnection.push_back(fillingRConnection);
-		fillingRConnection.clear();
+		if (fillingRConnection.size() != 0 ){
+			RealConnection.push_back(fillingRConnection);
+			fillingRConnection.clear();
+		}
 	}
 
+
+	//Saving the ring.
 	for (int i=0; i<RealConnection.size(); i++ ){
 		for(int j=0; j<RealConnection[i].size(); j++){
 			if(RealConnection[i][j].size() != 0 && 
