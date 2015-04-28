@@ -6,8 +6,7 @@
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//string fileName = "test.stl";
-	string fileName = "javierreduces.stl";
+	string fileName = "javierForTesting.stl";
 	//string fileName = "jachauvi_1.stl";
 
 	cout<< "sending the file\n";
