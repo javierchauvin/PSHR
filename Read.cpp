@@ -204,6 +204,8 @@ void Read::getHoles( void ){
 	vector<index> Ring;
 	vector<vector<vector<index>>> RealConnection;
 	vector<vector<index>> fillingRConnection;
+	vector<vector<index>> RCIndex;
+	vector<index> fillingRCIndex;
 
 	for (	int i = 0; i < Connection.size(); i++){
 		for ( int j = 1; j<Connection.at(i).size(); j++){
@@ -220,18 +222,6 @@ void Read::getHoles( void ){
 							
 							int triCoor = Connection[i][j][k].i;
 							
-							// Connection[triCoor][dotCoor]; index cheking
-
-							//if ( 0 == ConnectedV.size()){  //If there are not repeated connected vertices yet.
-							//	CVertex.i = triCoor; CVertex.j = dotCoor; //just storing the dot
-							//	ConnectedV.push_back(CVertex);
-
-							//	CVertex.i = i; CVertex.j = j;
-							//	ConnectedV.push_back(CVertex);
-							//	CVertex.i = i; CVertex.j = j+1;
-							//} 
-							//else {
-
 								if (ConnectedV.size() == 0){
 									for (int c=1; c<Connection[i].size(); c++){
 										if( j != c){
@@ -273,12 +263,17 @@ void Read::getHoles( void ){
 			}
 			if (ConnectedV.size() != 0){
 				fillingRConnection.push_back(ConnectedV);
+				CVertex.i = i;		CVertex.j = j;
+				fillingRCIndex.push_back(CVertex);
 				ConnectedV.clear();		
 			}
 		}
 		if (fillingRConnection.size() != 0 ){
 			RealConnection.push_back(fillingRConnection);
 			fillingRConnection.clear();
+
+			RCIndex.push_back(fillingRCIndex);
+			fillingRCIndex.clear();
 		}
 	}
 
@@ -286,8 +281,14 @@ void Read::getHoles( void ){
 	//Saving the ring.
 	for (int i=0; i<RealConnection.size(); i++ ){
 		for(int j=0; j<RealConnection[i].size(); j++){
+
+			int w = RCIndex[i][j].i; 
+			int x = RCIndex[i][j].j; 
+			int y = RealConnection[i][j].size();
+			int z = Connection[ RCIndex[i][j].j ][RCIndex[i][j].j].size();
+
 			if(RealConnection[i][j].size() != 0 && 
-				RealConnection[i][j].size() != Connection[i][j+1].size())
+				RealConnection[i][j].size() != Connection[ RCIndex[i][j].i ][RCIndex[i][j].j].size()+1)
 			{
 				// j+1 due to data's dimensions are [i][4] and RealConnection is [i][3]
 				index boundary; boundary.i = i; boundary.j = j+1;
@@ -296,8 +297,6 @@ void Read::getHoles( void ){
 			}
 		}
 	}
-
-
 
 	int a = 0;
 
