@@ -142,7 +142,7 @@ bool isInsideBox( Vertice Vertex, CBox InnerBox ){
 
 CBox Read::getInnerBox ( void ){
 
-	float IBoxFactorX = 0.8, IBoxFactorY = 0.8, IBoxFactorZ = 0.8; 
+	float IBoxFactorX = 0.6, IBoxFactorY = 0.6, IBoxFactorZ = 0.6; 
 	CBox InnerBox;
 
 	InnerBox.max.x = Box.max.x - ((1-IBoxFactorX)/2 * Box.max.x); 
@@ -168,7 +168,7 @@ void Read::getHoles( void ){
 	
 	
 	for (int i = 0; i< Data.size(); i++ ){
-		if ( isInsideBox(Data[i][1].Vertex, InnerBox) ){
+//		if ( isInsideBox(Data[i][1].Vertex, InnerBox) ){
 			for ( int j=1; j<Data.at(i).size(); j++ ){
 			
 			
@@ -189,7 +189,7 @@ void Read::getHoles( void ){
 				}
 
 			}
-		}
+//		}
 	}
 
 	Connection.assign(id.begin(),id.end());
@@ -202,13 +202,14 @@ void Read::getHoles( void ){
 
 
 	vector<index> Ring;
-	vector<vector<index>> RealConnection;
-	vector<index> dotsAnalized;
-	index Analized;
+	vector<vector<vector<index>>> RealConnection;
+	vector<vector<index>> fillingRConnection;
 
 	for (	int i = 0; i < Connection.size(); i++){
 		for ( int j = 1; j<Connection.at(i).size(); j++){
-			if(0 < Connection[i][j].size() ){
+			if(0 < Connection[i][j].size() &&
+				isInsideBox(Data[i][j].Vertex, InnerBox))	
+				{
 				for (int k=0; k<Connection[i][j].size(); k++){//// Until here only for the 3D 
 
 					b = Connection[i][j][k].i;
@@ -224,7 +225,6 @@ void Read::getHoles( void ){
 							if ( 0 == ConnectedV.size()){  //If there are not repeated connected vertices yet.
 								CVertex.i = triCoor; CVertex.j = dotCoor; //just storing the dot
 								ConnectedV.push_back(CVertex);
-								Analized.i = i; Analized.j = j;
 							} 
 							else {
 
@@ -239,37 +239,36 @@ void Read::getHoles( void ){
 								if ( !Repeated ){
 									CVertex.i = triCoor; CVertex.j = dotCoor; //just storing the dot
 									ConnectedV.push_back(CVertex);
-									Analized.i = i; Analized.j = j;
 								}
 							}
 						}
 					}
 
-					//if ( ConnectedV.size() != Connection[i][j].size() ){
-					//	CVertex.i = i; CVertex.j = j;
-					//	Ring.push_back( CVertex );
-					//	ConnectedV.clear();
-					//}
-
 				}
 			}
-			RealConnection.push_back(ConnectedV);
-			dotsAnalized.push_back(Analized);
-			ConnectedV.clear();
+			fillingRConnection.push_back(ConnectedV);
+			ConnectedV.clear();		
 		}
+		RealConnection.push_back(fillingRConnection);
+		fillingRConnection.clear();
 	}
 
 	for (int i=0; i<RealConnection.size(); i++ ){
-		//for(int j=0; j<RealConnection[i].size(); j++){
-		if(RealConnection[i].size() != 0 && 
-			RealConnection[i].size() != Connection[dotsAnalized.at(i).i][dotsAnalized.at(i).j].size())
-		{
-			Ring.push_back( dotsAnalized.at(i) );
-			i = RealConnection.size();
+		for(int j=0; j<RealConnection[i].size(); j++){
+			if(RealConnection[i][j].size() != 0 && 
+				RealConnection[i][j].size() != Connection[i][j+1].size())
+			{
+				// j+1 due to data's dimensions are [i][4] and RealConnection is [i][3]
+				index boundary; boundary.i = i; boundary.j = j+1;
+				Ring.push_back( boundary );
+				//i = RealConnection.size();
+			}
 		}
 	}
 
-	//int a = 0;
+
+
+	int a = 0;
 
 	//for (int i=0; i<Connection.size(); i++){
 	//	for (int j=0; j<Connection.at(i).size(); j++){
