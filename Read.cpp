@@ -170,15 +170,11 @@ void Read::getHoles( void ){
 	for (int i = 0; i< Data.size(); i++ ){
 //		if ( isInsideBox(Data[i][1].Vertex, InnerBox) ){
 			for ( int j=1; j<Data.at(i).size(); j++ ){
-			
-			
-				//do the algorithm to find the boudary vertices.
-
-
 				for (	int k = 0; k < Data.size(); k++){
 					for ( int l = 1; l<Data.at(k).size(); l++){
 						if (Data[k][l].Vertex.x == Data[i][j].Vertex.x &&
-							k!=i ){
+							 Data[k][l].Vertex.y == Data[i][j].Vertex.y &&
+							 k!=i ){
 
 							newIndex.i = k; newIndex.j = l;
 							id[i][j].push_back(newIndex);
@@ -207,10 +203,13 @@ void Read::getHoles( void ){
 	vector<vector<index>> RCIndex;
 	vector<index> fillingRCIndex;
 
+
+	vector<vector<vector<index>>> ideota (Data.size(), Data.at(0).size());
+
 	for (	int i = 0; i < Connection.size(); i++){
 		for ( int j = 1; j<Connection.at(i).size(); j++){
-			if(0 < Connection[i][j].size() &&
-				isInsideBox(Data[i][j].Vertex, InnerBox))	
+			if(0 < Connection[i][j].size() /*&&
+				isInsideBox(Data[i][j].Vertex, InnerBox)*/)	
 				{
 				for (int k=0; k<Connection[i][j].size(); k++){//// Until here only for the 3D 
 
@@ -227,6 +226,7 @@ void Read::getHoles( void ){
 										if( j != c){
 											CVertex.i = i; CVertex.j = c;
 											ConnectedV.push_back(CVertex);
+											ideota[i][j].push_back(CVertex);
 										}
 									}
 								}
@@ -253,6 +253,7 @@ void Read::getHoles( void ){
 									CVertex.i = triCoor;
 									CVertex.j = dotCoor; //just storing the dot
 									ConnectedV.push_back(CVertex);
+									ideota[i][j].push_back(CVertex);
 								}
 								Repeated = false;
 							//}
@@ -265,7 +266,7 @@ void Read::getHoles( void ){
 				fillingRConnection.push_back(ConnectedV);
 				CVertex.i = i;		CVertex.j = j;
 				fillingRCIndex.push_back(CVertex);
-				ConnectedV.clear();		
+				ConnectedV.clear();	
 			}
 		}
 		if (fillingRConnection.size() != 0 ){
@@ -278,27 +279,83 @@ void Read::getHoles( void ){
 	}
 
 
-	//Saving the ring.
-	for (int i=0; i<RealConnection.size(); i++ ){
-		for(int j=0; j<RealConnection[i].size(); j++){
+	////Saving the ring.
+	//for (int i=0; i<RealConnection.size(); i++ ){
+	//	for(int j=0; j<RealConnection[i].size(); j++){
 
-			int w = RCIndex[i][j].i; 
-			int x = RCIndex[i][j].j; 
-			int y = RealConnection[i][j].size();
-			int z = Connection[ RCIndex[i][j].j ][RCIndex[i][j].j].size();
+	//		int w = RCIndex[i][j].i; 
+	//		int x = RCIndex[i][j].j; 
+	//		int y = RealConnection[i][j].size();
+	//		int z = Connection[ RCIndex[i][j].j ][RCIndex[i][j].j].size();
 
-			if(RealConnection[i][j].size() != 0 && 
-				RealConnection[i][j].size() != Connection[ RCIndex[i][j].i ][RCIndex[i][j].j].size()+1)
+	//		if(RealConnection[i][j].size() != 0 && 
+	//			RealConnection[i][j].size() != Connection[ RCIndex[i][j].i ][RCIndex[i][j].j].size()+1)
+	//		{
+	//			// j+1 due to data's dimensions are [i][4] and RealConnection is [i][3]
+	//			index boundary; boundary.i = i; boundary.j = j+1;
+	//			Ring.push_back( boundary );
+	//			//i = RealConnection.size();
+	//		}
+	//	}
+	//}
+
+	for (int i=0; i<ideota.size(); i++ ){
+		for(int j=1; j<ideota[i].size(); j++){
+
+			if(ideota[i][j].size() != 0 && 
+				// +1 because in connection is not taken into account the analized vertex
+				ideota[i][j].size() != Connection[i][j].size()+1)
 			{
-				// j+1 due to data's dimensions are [i][4] and RealConnection is [i][3]
-				index boundary; boundary.i = i; boundary.j = j+1;
+				index boundary; boundary.i = i; boundary.j = j;
 				Ring.push_back( boundary );
-				//i = RealConnection.size();
+				j = ideota[i].size();
+				i = ideota.size()-1;
 			}
 		}
 	}
 
-	int a = 0;
+	index firstBV = Ring[0];
+	index newBV = firstBV; 
+	bool keepSearching = true;
+	index idi;
+	
+
+	while (keepSearching){
+		//Checks all connections of the first found boundary vertex
+		int i=0;
+		int aux = ideota[newBV.i][newBV.j].size();
+		while ( i < ideota[newBV.i][newBV.j].size() ){
+		//for (int i=0; i<ideota[newBV.i][newBV.j].size(); i++){
+
+			idi = ideota[newBV.i][newBV.j][i]; 
+
+			
+			if (ideota[idi.i][idi.j].size() != Connection[idi.i][idi.j].size()+1){
+
+				if( idi.i != newBV.i && //avoiding that analyzed seed and the analyzed would be in the same trianlge
+					 Ring[0].i == idi.i && Ring[0].j == idi.j ){ // if the loop is closed
+					 keepSearching = false;
+				} else if ( (Ring[0].i == idi.i) ? (Ring[0].j != idi.j) : true ){
+					bool notRepeated = true; 
+					for (int w = 0; w< Ring.size(); w++){
+						if (idi.i == Ring[w].i && idi.j == Ring[w].j){
+							notRepeated = false;
+						}
+					}
+					if (notRepeated){
+						newBV = idi;
+						Ring.push_back( newBV );
+						i = 0;
+					}
+				}
+			}
+			i++;
+		}
+	}
+
+
+
+
 
 	//for (int i=0; i<Connection.size(); i++){
 	//	for (int j=0; j<Connection.at(i).size(); j++){
