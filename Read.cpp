@@ -2,11 +2,6 @@
 #include "Read.h"
 #include <fstream>
 
-struct index{
-	int i;
-	int j;
-};
-
 vector<index> Ids;
 vector<vector<vector<index>>> Connection;
 
@@ -17,6 +12,7 @@ Read::Read(string fileName){
 	getData();
 	getContainingBox();
 	getHoles();
+	exportHoles();
 }
 
 void Read::getData(void){
@@ -156,6 +152,18 @@ CBox Read::getInnerBox ( void ){
 	return InnerBox;
 }
 
+bool Read::isNotInHoles(index analized){
+	bool res = true;
+	for (int i=0; i<holes.size(); i++){
+		for (int j=0; j<holes[i].size(); j++){
+			if( analized.i == holes[i][j].i && analized.j == holes[i][j].j ){
+				res = false;
+			}
+		}
+	}
+	return res;
+}
+
 void Read::getHoles( void ){
 
 	cout<< "getting Holes-------- \n";
@@ -278,6 +286,7 @@ void Read::getHoles( void ){
 		}
 	}
 
+	cout<< "Done real connection - ideota \n";
 
 	////Saving the ring.
 	//for (int i=0; i<RealConnection.size(); i++ ){
@@ -299,6 +308,13 @@ void Read::getHoles( void ){
 	//	}
 	//}
 
+	bool stillHoles = true;
+	int numberOfHoles = 0;
+
+	while ( stillHoles )
+	{
+
+	//Found the first boundary vertex
 	for (int i=0; i<ideota.size(); i++ ){
 		for(int j=1; j<ideota[i].size(); j++){
 
@@ -306,10 +322,14 @@ void Read::getHoles( void ){
 				// +1 because in connection is not taken into account the analized vertex
 				ideota[i][j].size() != Connection[i][j].size()+1)
 			{
-				index boundary; boundary.i = i; boundary.j = j;
-				Ring.push_back( boundary );
-				j = ideota[i].size();
-				i = ideota.size()-1;
+				index analized;
+				analized.i = i; analized.j = j; 
+				if (isNotInHoles( analized )){
+					index boundary; boundary.i = i; boundary.j = j;
+					Ring.push_back( boundary );
+					j = ideota[i].size();
+					i = ideota.size()-1;
+				}
 			}
 		}
 	}
@@ -318,7 +338,6 @@ void Read::getHoles( void ){
 	index newBV = firstBV; 
 	bool keepSearching = true;
 	index idi;
-	
 
 	while (keepSearching){
 		//Checks all connections of the first found boundary vertex
@@ -353,9 +372,15 @@ void Read::getHoles( void ){
 		}
 	}
 
+	holes.push_back(Ring);
+	Ring.clear();
+	cout<< "First ring compleated \n";
 
+	if (++numberOfHoles >= 0){
+		stillHoles = false;
+	}
 
-
+	}
 
 	//for (int i=0; i<Connection.size(); i++){
 	//	for (int j=0; j<Connection.at(i).size(); j++){
@@ -368,5 +393,98 @@ void Read::getHoles( void ){
 	//	}
 	//}
 
+}
+
+void Read::exportHoles( void ){
+
+	vector<vector<int>> Faces;
+	vector<int> face;
+
+	std::ofstream outfile ("Holes.wrl");
+	outfile << "#VRML V2.0 utf8" << std::endl;
+	outfile << "#" << std::endl;
+	outfile << "#Surface by Javier Chauvin" << std::endl<< std::endl<< std::endl;
+	outfile << "Shape{" << std::endl;
+	outfile << "	geometry IndexedFaceSet{" << std::endl;
+	outfile << "		coord Coordinate{" << std::endl;
+	outfile << "			point[" << std::endl;
+
+	for ( int i=0; i<holes.size(); i++ ){
+		for( int j=0; j<holes[i].size(); j++ ){
+
+			int o = holes[i][j].i; 
+			int p = holes[i][j].j;
+
+			outfile <<"					" << Data[o][p].Vertex.x;
+			outfile <<" ";
+			outfile << Data[o][p].Vertex.y;
+			outfile <<" ";
+			outfile << Data[o][p].Vertex.z<<","<< std::endl;
+
+			if (i == 0){
+				face.push_back(j+1);
+			} else {
+				face.push_back( (i+1)*(j+1) );
+			}
+		}
+			Faces.push_back(face);
+			face.clear();
+	}
+
+	//for(unsigned int i = 0; i < DataFile.size(); i++){
+	//	for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
+	//		outfile <<"					" << DataFile[i][j].Vertex.x;
+	//		outfile <<" ";
+	//		outfile << DataFile[i][j].Vertex.y;
+	//		outfile <<" ";
+	//		outfile << DataFile[i][j].Vertex.z<<","<< std::endl;
+
+	//		if ( i < DataFile.size()-1 && j < DataFile.at(i).size()-1 ){
+	//			int l, k;
+	//			l=i;	k=j;		face.push_back(l*DataFile.size()+k);	colorface.push_back(Color[l][k]); 
+	//			l=i;	k=j+1;	face.push_back(l*DataFile.size()+k);	colorface.push_back(Color[l][k]); 
+	//			l=i+1;k=j+1;	face.push_back(l*DataFile.size()+k);	colorface.push_back(Color[l][k]); 
+	//			l=i+1;k=j;		face.push_back(l*DataFile.size()+k);	colorface.push_back(Color[l][k]); 
+	//			Faces.push_back(face);
+	//			face.clear();
+	//			colorFaces.push_back(colorface);
+	//			colorface.clear();
+	//		}
+	//	}
+	//}
+	outfile << "					]" << std::endl;
+	outfile << "		}" << std::endl;
+
+	outfile << "		coordIndex[" << std::endl;;
+	for(unsigned int i = 0; i < Faces.size(); i++){
+		outfile << "				  ";
+		for(unsigned int j = 0; j < Faces.at(i).size(); j++){
+			outfile << Faces[i][j];
+			outfile <<", ";
+		}
+		outfile <<"-1,"<< std::endl;
+	}
+	outfile << "					 ]" << std::endl;
+
+	//outfile << "		color Color{" << std::endl;
+	//outfile << "			color[ 0 0 0, 1 1 1, 0.5 0.5 0.5 ]" << std::endl;
+	//outfile << "		}" << std::endl;
+
+	//outfile << "		colorIndex[" << std::endl;;
+	//for(unsigned int i = 0; i < colorFaces.size(); i++){
+	//	outfile << "					";
+	//	for(unsigned int j = 0; j < colorFaces.at(i).size(); j++){
+	//		outfile << colorFaces[i][j];
+	//		outfile <<", ";
+	//	}
+	//	outfile <<"-1,"<< std::endl;
+	//}
+	//outfile << "					 ]" << std::endl;
+
+	outfile << "		solid FALSE" << std::endl;
+	outfile << "	}" << std::endl;
+	outfile << "}" << std::endl;
+
+	cout << "The .wlr file was created\n";
 }
 

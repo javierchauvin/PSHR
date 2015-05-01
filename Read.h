@@ -10,6 +10,11 @@ using namespace std;
 		Vertice dimensions;
 	};
 
+struct index{
+	int i;
+	int j;
+};
+
 class Read {
 	
 	//File to add to the system
@@ -23,7 +28,7 @@ class Read {
 	CBox Box;
 
 	//Closed loops of boundary edges 
-	vector<vector<vecMath>> holes;
+	vector<vector<index>> holes;
 
 public:
 	Read (string fileName);
@@ -41,5 +46,9 @@ private:
 	void getHoles ( void );
 
 	CBox getInnerBox ( void );
+
+	//export found holes to .vrl file
+	void exportHoles ( void );
+	bool isNotInHoles(index analized);
 
 };
